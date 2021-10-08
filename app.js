@@ -8,28 +8,28 @@ const { createWorker } = require("tesseract.js");
 
 // ---------------------------------------------------------------------- [CONFIG] ----------------
 // Venom
-const venom_instance_name = "whatsapp_cih_bot_instance";
+const venomInstanceName = "whatsapp_cih_bot_instance";
 // Node-Schedule
-const node_schedule_cron = "0 7 * * *";
+const nodeScheduleCron = "0 7 * * *";
 // CIH data
-const cih_service_phone_number = "2120522479947";
-const cih_service_sender_name = "CIH BANK";
-const cih_service_payload_menu = "Menu";
-const cih_service_payload_solde = "Solde";
+const cihServicePhoneNumber = "2120522479947";
+const cihServiceSenderName = "CIH BANK";
+const cihServicePayloadMenu = "Menu";
+const cihServicePayloadSolde = "Solde";
 // Pupperteer
-const screenshot_file_name = "balance.png";
+const screenshotFileName = "balance.png";
 // Gotify
-const gotify_url = "http://10.0.0.4:8001/message?token=A5aTZRSUr.AXzqN";
+const gotifyUrl = "http://10.0.0.4:8001/message?token=A5aTZRSUr.AXzqN";
 // Common
-const image_file_path = path.resolve(__dirname, screenshot_file_name);
+const imageFilePath = path.resolve(__dirname, screenshotFileName);
 
 // ---------------------------------------------------------------------- [App] -------------------
 
-const delete_balance_image = () => unlinkSync(image_file_path);
+const deleteBalanceImage = () => unlinkSync(imageFilePath);
 
-const send_balance = payload => {
+const sendBalance = payload => {
 	axios({
-		url: gotify_url,
+		url: gotifyUrl,
 		data: {
 			title: "CIH Bot - Bank Accounts' Balances",
 			message: payload,
@@ -38,11 +38,11 @@ const send_balance = payload => {
 		method: "post",
 		headers: { "Content-Type": "application/json" },
 	})
-		.then(() => delete_balance_image())
+		.then(() => deleteBalanceImage())
 		.catch(error => console.error(error));
 };
 
-const recognize_balance = async () => {
+const recognizeBalance = async () => {
 	const worker = createWorker();
 
 	await worker.load();
@@ -51,19 +51,17 @@ const recognize_balance = async () => {
 
 	const {
 		data: { text },
-	} = await worker.recognize(image_file_path);
-
-	let cleanText = text.replace(/Historique|9 /g, "");
+	} = await worker.recognize(imageFilePath);
 
 	await worker.terminate();
 
-	send_balance(cleanText);
+	sendBalance(text.replace(/Historique|9 /g, ""));
 };
 
 const start = async client => {
-	schedule.scheduleJob(node_schedule_cron, async () => {
+	schedule.scheduleJob(nodeScheduleCron, async () => {
 		await client
-			.sendText(`${cih_service_phone_number}@c.us`, cih_service_payload_solde)
+			.sendText(`${cihServicePhoneNumber}@c.us`, cihServicePayloadSolde)
 			.catch(error => console.error(error));
 	});
 
@@ -71,7 +69,7 @@ const start = async client => {
 		if (
 			message.body &&
 			message.sender &&
-			message.sender.name === cih_service_sender_name
+			message.sender.name === cihServiceSenderName
 		) {
 			const url = message.body.match(/\bhttps?:\/\/\S+/gim)[0];
 
@@ -90,15 +88,15 @@ const start = async client => {
 			});
 
 			await page.waitForTimeout(30000);
-			await page.screenshot({ path: screenshot_file_name, fullPage: true });
+			await page.screenshot({ path: screenshotFileName, fullPage: true });
 			await browser.close();
 
-			recognize_balance();
+			recognizeBalance();
 		}
 	});
 };
 
 venom
-	.create(venom_instance_name)
+	.create(venomInstanceName)
 	.then(client => start(client))
 	.catch(error => console.error(error));
