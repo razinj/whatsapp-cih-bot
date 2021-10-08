@@ -62,7 +62,7 @@ const recognizeBalance = async () => {
 
 	sendToGotify(
 		"CIH Bot - Bank Accounts' Balances",
-		text.replace(/Historique|9 /g, ""),
+		text.replace(/Historique|9 | >/g, ""),
 		true
 	);
 };
