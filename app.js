@@ -25,21 +25,26 @@ const imageFilePath = path.resolve(__dirname, screenshotFileName);
 
 // ---------------------------------------------------------------------- [App] -------------------
 
-const deleteBalanceImage = () => unlinkSync(imageFilePath);
-
-const sendBalance = payload => {
+const sendToGotify = (title, message, deleteImage) => {
 	axios({
 		url: gotifyUrl,
 		data: {
-			title: "CIH Bot - Bank Accounts' Balances",
-			message: payload,
+			title,
+			message,
 			priority: 10,
 		},
 		method: "post",
 		headers: { "Content-Type": "application/json" },
 	})
-		.then(() => deleteBalanceImage())
-		.catch(error => console.error(error));
+		.then(() => {
+			if (deleteImage) unlinkSync(imageFilePath);
+		})
+		.catch(error => logErrors(error));
+};
+
+const logErrors = error => {
+	console.error(error);
+	sendToGotify("CIH Bot - Error", error, false);
 };
 
 const recognizeBalance = async () => {
@@ -55,14 +60,18 @@ const recognizeBalance = async () => {
 
 	await worker.terminate();
 
-	sendBalance(text.replace(/Historique|9 /g, ""));
+	sendToGotify(
+		"CIH Bot - Bank Accounts' Balances",
+		text.replace(/Historique|9 /g, ""),
+		true
+	);
 };
 
 const start = async client => {
 	schedule.scheduleJob(nodeScheduleCron, async () => {
 		await client
 			.sendText(`${cihServicePhoneNumber}@c.us`, cihServicePayloadSolde)
-			.catch(error => console.error(error));
+			.catch(error => logErrors(error));
 	});
 
 	client.onMessage(async message => {
@@ -99,4 +108,4 @@ const start = async client => {
 venom
 	.create(venomInstanceName)
 	.then(client => start(client))
-	.catch(error => console.error(error));
+	.catch(error => logErrors(error));
