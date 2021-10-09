@@ -3,19 +3,20 @@
 	"version": "1.0.0",
 	"main": "app.js",
 	"scripts": {
-		"start:dev": "nodemon app.js",
-		"start:prod": "node app.js"
+		"start": "node app.js"
 	},
-	"author": "RAZINJ",
+	"author": {
+		"name": "RAZINJ",
+		"email": "nizarjailane@gmail.com",
+		"url": "https://razinj.com"
+	},
 	"license": "MIT",
 	"dependencies": {
 		"axios": "^0.22.0",
+		"dotenv": "^10.0.0",
 		"node-schedule": "^2.0.0",
 		"puppeteer": "^10.4.0",
 		"tesseract.js": "^2.1.5",
 		"venom-bot": "^3.1.8"
-	},
-	"devDependencies": {
-		"nodemon": "^2.0.13"
 	}
 }

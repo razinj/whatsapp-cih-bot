@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const path = require("path");
 const axios = require("axios");
 const venom = require("venom-bot");
@@ -8,19 +10,19 @@ const { createWorker } = require("tesseract.js");
 
 // ---------------------------------------------------------------------- [CONFIG] ----------------
 // Venom
-const venomInstanceName = "whatsapp_cih_bot_instance";
+const venomInstanceName = process.env.VENOM_INSTANCE_NAME || "cih_bot_instance";
 // Node-Schedule
-const nodeScheduleCron = "0 7 * * *";
+const nodeScheduleCron = process.env.NODE_SCHEDULE_CRON || "0 7 * * *";
 // CIH data
-const cihServicePhoneNumber = "2120522479947";
-const cihServiceSenderName = "CIH BANK";
-const cihServicePayloadMenu = "Menu";
+const cihServicePhoneNumber = process.env.CIH_SERVICE_NUMBER || "2120522479947";
+const cihServiceSenderName = process.env.CIH_SERVICE_SENDER_NAME || "CIH BANK";
 const cihServicePayloadSolde = "Solde";
 // Pupperteer
 const screenshotFileName = "balance.png";
 // Gotify
-const gotifyUrl = "http://10.0.0.4:8001/message?token=A5aTZRSUr.AXzqN";
+const gotifyUrl = process.env.GOTIFY_URL;
 // Common
+const appEnv = process.env.ENV || "prod";
 const imageFilePath = path.resolve(__dirname, screenshotFileName);
 
 // ---------------------------------------------------------------------- [App] -------------------
@@ -31,7 +33,7 @@ const sendToGotify = (title, message, deleteImage) => {
 		data: {
 			title,
 			message,
-			priority: 10,
+			priority: +process.env.GOTIFY_PRIORITY || 10,
 		},
 		method: "post",
 		headers: { "Content-Type": "application/json" },
@@ -39,20 +41,20 @@ const sendToGotify = (title, message, deleteImage) => {
 		.then(() => {
 			if (deleteImage) unlinkSync(imageFilePath);
 		})
-		.catch(error => logErrors(error));
+		.catch(error => logError(error));
 };
 
-const logErrors = error => {
+const logError = error => {
 	console.error(error);
-	sendToGotify("CIH Bot - Error", error, false);
+	if (appEnv == "prod") sendToGotify("CIH Bot - Error", error, false);
 };
 
 const recognizeBalance = async () => {
 	const worker = createWorker();
 
 	await worker.load();
-	await worker.loadLanguage("eng");
-	await worker.initialize("eng");
+	await worker.loadLanguage("fra");
+	await worker.initialize("fra");
 
 	const {
 		data: { text },
@@ -62,7 +64,7 @@ const recognizeBalance = async () => {
 
 	sendToGotify(
 		"CIH Bot - Bank Accounts' Balances",
-		text.replace(/Historique|9 | >/g, ""),
+		text.replace(/Historique —|Historique >|° /g, ""),
 		true
 	);
 };
@@ -71,7 +73,7 @@ const start = async client => {
 	schedule.scheduleJob(nodeScheduleCron, async () => {
 		await client
 			.sendText(`${cihServicePhoneNumber}@c.us`, cihServicePayloadSolde)
-			.catch(error => logErrors(error));
+			.catch(error => logError(error));
 	});
 
 	client.onMessage(async message => {
@@ -108,4 +110,4 @@ const start = async client => {
 venom
 	.create(venomInstanceName)
 	.then(client => start(client))
-	.catch(error => logErrors(error));
+	.catch(error => logError(error));
