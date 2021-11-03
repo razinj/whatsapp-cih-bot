@@ -1,6 +1,6 @@
 # WhatsApp CIH Bot
 
-This app's goal is to get personal accounts' balances in a legal way by using CIH Bank's WhatsApp service, hint, in order to use this script/app you will need to enable this feature from your CIH application.
+This app's goal is to get personal accounts' balances in a legal way by using [CIH](https://www.cihbank.ma) Bank's WhatsApp service, hint, in order to use this script/app you will need to enable this feature from your [CIH](https://www.cihbank.ma) application.
 
 ## What's inside ?
 
@@ -25,7 +25,7 @@ This app's goal is to get personal accounts' balances in a legal way by using CI
 
 4- Scan the QR code
 
-### **Deployment** (using [PM2](https://github.com/Unitech/pm2))
+### **Deploy** (using [PM2](https://github.com/Unitech/pm2))
 
 1- Do, 1, 2 from the previous section (`Run` section)
 
@@ -54,6 +54,8 @@ Solde Actuel :#### MAD
 
 ### Final words
 
-Your imagination is the limit, clone/fork the repo and add as much needed modification or functionalities.
+If you like the app, give it a star ⭐
 
-I will shamelessly link my post on how to [install Gotify server](https://razinj.dev/how-to-install-gotify-docker-compose/) in case needed.
+Your imagination is the limit, clone/fork the repo, adapt and/or add as much needed modifications or functionalities.
+
+Wondering what is Gotify ? I will shamelessly link my post on how to [install Gotify server](https://razinj.dev/how-to-install-gotify-docker-compose/) in case needed.
