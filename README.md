@@ -4,7 +4,7 @@ This app's goal is to get personal accounts' balances in a legal way by using CI
 
 ## What's inside ?
 
-- [Venpm](https://github.com/orkestral/venom) as a WhatsApp client
+- [Venom](https://github.com/orkestral/venom) as a WhatsApp client
 - [Puppeteer](https://github.com/puppeteer/puppeteer) as a headless browser
 - [Tesseract.js](https://github.com/naptha/tesseract.js) as an OCR
 - [Node Schedule](https://github.com/node-schedule/node-schedule) as a scheduler
