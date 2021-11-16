@@ -1,4 +1,5 @@
 node_modules
 tokens
+screenshots/*.png
 .DS_Store
 .env

@@ -1,12 +1,9 @@
 require("dotenv").config();
 
-const path = require("path");
 const axios = require("axios");
 const venom = require("venom-bot");
-const { unlinkSync } = require("fs");
 const puppeteer = require("puppeteer");
 const schedule = require("node-schedule");
-const { createWorker } = require("tesseract.js");
 
 // ---------------------------------------------------------------------- [CONFIG] ----------------
 // Venom
@@ -17,56 +14,50 @@ const nodeScheduleCron = process.env.NODE_SCHEDULE_CRON || "0 7 * * *";
 const cihServicePhoneNumber = process.env.CIH_SERVICE_NUMBER || "2120522479947";
 const cihServiceSenderName = process.env.CIH_SERVICE_SENDER_NAME || "CIH BANK";
 const cihServicePayloadSolde = "Solde";
-// Pupperteer
-const screenshotFileName = "balance.png";
 // Gotify
 const gotifyUrl = process.env.GOTIFY_URL;
 // Common
 const appEnv = process.env.ENV || "prod";
-const imageFilePath = path.resolve(__dirname, screenshotFileName);
+
+let currentTimestamp = null;
 
 // ---------------------------------------------------------------------- [App] -------------------
 
-const sendToGotify = (title, message, deleteImage) => {
+const getTimestamp = () => Math.floor(new Date().getTime() / 1000);
+
+const sendToGotify = (title, message) => {
 	axios({
 		url: gotifyUrl,
 		data: {
 			title,
-			message,
-			priority: +process.env.GOTIFY_PRIORITY || 10,
+			message: message || getMessageTemplate(),
+			priority:
+				process.env.GOTIFY_PRIORITY == null ? 10 : +process.env.GOTIFY_PRIORITY,
+			extras: {
+				"client::display": {
+					contentType: "text/markdown",
+				},
+			},
 		},
 		method: "post",
 		headers: { "Content-Type": "application/json" },
-	})
-		.then(() => {
-			if (deleteImage) unlinkSync(imageFilePath);
-		})
-		.catch(error => logError(error));
+	}).catch(error => logError(error));
 };
 
 const logError = error => {
 	console.error(error);
-	if (appEnv == "prod") sendToGotify("CIH Bot - Error", error, false);
+	if (appEnv == "prod") sendToGotify("CIH Bot - Error", error);
 };
 
-const recognizeBalance = async () => {
-	const worker = createWorker();
-
-	await worker.load();
-	await worker.loadLanguage("fra");
-	await worker.initialize("fra");
-
-	const {
-		data: { text },
-	} = await worker.recognize(imageFilePath);
-
-	await worker.terminate();
-
-	sendToGotify(
-		"CIH Bot - Bank Accounts' Balances",
-		text.replace(/Historique —|Historique >|° /g, ""),
-		true
-	);
+const getMessageTemplate = () => {
+	return `
+**Balance**\n
+![Balance](http://10.0.0.2:8080/screenshots/balance_${currentTimestamp}.png)\n
+**Saving account History**\n
+![Saving account](http://10.0.0.2:8080/screenshots/savings_account_details_${currentTimestamp}.png)\n
+**Main account History**\n
+![Main account](http://10.0.0.2:8080/screenshots/main_account_details_${currentTimestamp}.png)
+`;
 };
 
 const start = async client => {
@@ -82,6 +73,8 @@ const start = async client => {
 			message.sender &&
 			message.sender.name === cihServiceSenderName
 		) {
+			currentTimestamp = getTimestamp();
+
 			const url = message.body.match(/\bhttps?:\/\/\S+/gim)[0];
 
 			const browser = await puppeteer.launch();
@@ -99,10 +92,35 @@ const start = async client => {
 			});
 
 			await page.waitForTimeout(30000);
-			await page.screenshot({ path: screenshotFileName, fullPage: true });
+			await page.screenshot({
+				path: `./screenshots/balance_${currentTimestamp}.png`,
+				fullPage: true,
+			});
+
+			await page.click(
+				".r-150rngu > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1)"
+			);
+			await page.waitForTimeout(10000);
+			await page.screenshot({
+				path: `./screenshots/savings_account_details_${currentTimestamp}.png`,
+				fullPage: true,
+			});
+
+			await page.click(".r-1kihuf0 > div:nth-child(1)");
+			await page.waitForTimeout(10000);
+
+			await page.click(
+				".r-150rngu > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1)"
+			);
+			await page.waitForTimeout(10000);
+			await page.screenshot({
+				path: `./screenshots/main_account_details_${currentTimestamp}.png`,
+				fullPage: true,
+			});
+
 			await browser.close();
 
-			recognizeBalance();
+			sendToGotify("CIH Bot - Bank Accounts' Balances");
 		}
 	});
 };
