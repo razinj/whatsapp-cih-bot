@@ -3,3 +3,4 @@ tokens
 screenshots/*.png
 .DS_Store
 .env
+*.traineddata
